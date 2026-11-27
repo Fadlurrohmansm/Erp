@@ -7,7 +7,7 @@
   <form method="post">
     {% csrf_token %}
     <div class="form-actions">
-      <button class="btn danger" type="submit">Hapus akun</button>
+      <button class="btn danger" type="submit" aria-label="Konfirmasi hapus akun" title="Konfirmasi hapus akun">{% include 'core/icons/trash.html' %}</button>
       <a class="btn secondary" href="{{ back_url }}">Batal</a>
     </div>
   </form>

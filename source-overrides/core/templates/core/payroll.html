@@ -1,0 +1,139 @@
+{% extends 'core/base.html' %}
+{% load erp static %}
+{% block title %}Payroll{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'core/payroll-list.css' %}">{% endblock %}
+{% block content %}
+<div class="pr-page">
+  <header class="pr-heading">
+    <div>
+      {% if selected_branch %}<p class="pr-meta">{{ selected_branch.name }}</p>{% endif %}
+      <h1>Payroll</h1>
+    </div>
+    <a class="btn pr-primary" href="{% url 'payroll_create' %}">+ Buat payroll</a>
+  </header>
+
+  <section class="pr-overview" aria-labelledby="paid-overview">
+    <div class="pr-overview-head">
+      <h2 id="paid-overview">Gaji yang sudah diberikan</h2>
+      <a class="pr-link" href="#riwayat-pembayaran">Lihat riwayat</a>
+    </div>
+    <form method="get" class="pr-payment-filter">
+      <input type="hidden" name="q" value="{{ query }}">
+      <input type="hidden" name="month" value="{{ selected_month }}">
+      <input type="hidden" name="year" value="{{ selected_year }}">
+      <label for="pr-paid-month">Bulan pembayaran</label>
+      <input id="pr-paid-month" type="month" name="paid_month" value="{{ paid_summary.month_value }}">
+      <button class="btn secondary" type="submit">Tampilkan</button>
+    </form>
+    <dl class="pr-metrics">
+      <div class="pr-metric pr-metric-main"><dt>Total dibayar</dt><dd>{{ paid_summary.total|rupiah }}</dd></div>
+      <div class="pr-metric"><dt>Slip dibayar</dt><dd>{{ paid_summary.count }}</dd></div>
+      <div class="pr-metric"><dt>Karyawan menerima</dt><dd>{{ paid_summary.employee_count }}</dd></div>
+    </dl>
+  </section>
+
+  <section class="pr-slips" aria-labelledby="pr-slips-title">
+    <div class="pr-section-head">
+      <h2 id="pr-slips-title">Slip gaji</h2>
+      <details class="pr-settings">
+        <summary>Pengaturan</summary>
+        <div>
+          <a class="pr-link" href="{% url 'payroll_deduction_settings' %}">Atur potongan absensi</a>
+          <a class="pr-link" href="{% url 'slip_layout_settings' %}">Atur layout slip</a>
+        </div>
+      </details>
+    </div>
+
+    <form method="get" class="pr-filter pr-surface">
+      <input type="hidden" name="paid_month" value="{{ paid_summary.month_value }}">
+      <label class="pr-search">Karyawan
+        <input type="search" name="q" value="{{ query }}" placeholder="Nama atau kode karyawan">
+      </label>
+      <label>Bulan slip
+        <select name="month">
+          <option value="">Semua bulan</option>
+          {% for n,name in months %}<option value="{{ n }}" {% if selected_month == n|stringformat:'i' %}selected{% endif %}>{{ name }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Tahun
+        <input type="number" name="year" value="{{ selected_year }}" placeholder="Semua" min="2020" max="2100">
+      </label>
+      <div class="pr-filter-actions">
+        <button type="submit" class="btn secondary">Filter</button>
+        <a class="pr-link" href="{% url 'payroll_list' %}?paid_month={{ paid_summary.month_value|urlencode }}">Reset</a>
+      </div>
+    </form>
+
+    <div class="pr-slip-grid">
+      {% for p in payrolls %}
+        {% with payment=p.active_payment %}
+          <article class="pr-slip pr-surface">
+            <div class="pr-slip-head">
+              <div>
+                <h3>{{ p.employee.full_name }}</h3>
+                <p class="pr-meta">{{ p.period_label }}</p>
+              </div>
+              {% if payment %}<span class="pr-status pr-status-paid">Sudah dibayar</span>
+              {% else %}<span class="pr-status pr-status-due">Belum dibayar</span>{% endif %}
+            </div>
+            <div class="pr-slip-amount">
+              <p class="pr-meta">Gaji bersih</p>
+              <strong>{{ p.net_salary|rupiah }}</strong>
+              {% if payment %}<p class="pr-meta">Dibayar {{ payment.paid_date|date:'d M Y' }}</p>{% endif %}
+            </div>
+            <div class="pr-slip-actions{% if payment %} pr-slip-actions-paid{% endif %}">
+              <a class="btn pr-primary" href="{% url 'payroll_preview' p.pk %}">Pratinjau slip</a>
+              {% if not payment %}<a class="btn secondary" href="{% url 'payroll_pay' p.pk %}">Catat sudah dibayar</a>{% endif %}
+            </div>
+            <details class="pr-slip-details">
+              <summary>Rincian dan tindakan</summary>
+              <p class="pr-meta">{% if p.pay_scheme == 'daily' %}Harian · {{ p.present_days|add:p.late_days }} hari × {{ p.daily_rate|rupiah }}{% else %}Bulanan{% endif %}</p>
+              <dl class="pr-breakdown">
+                <div><dt>Gaji pokok</dt><dd>{{ p.payable_base_salary|rupiah }}</dd></div>
+                <div><dt>Uang bensin</dt><dd>{{ p.fuel_allowance|rupiah }}</dd></div>
+                <div><dt>Bonus tepat waktu <small>{{ p.punctual_days }} hari</small></dt><dd>{{ p.punctual_bonus|rupiah }}</dd></div>
+                <div><dt>Bonus manual</dt><dd>{{ p.manual_bonus|rupiah }}</dd></div>
+                {% for item in p.extras.all %}<div><dt>{{ item.description }}</dt><dd>{{ item.amount|rupiah }}</dd></div>{% endfor %}
+                <div><dt>Libur / sakit</dt><dd>{{ p.off_days }}{% if not p.start_date %} dari {{ p.monthly_leave_quota }}{% endif %} libur · {{ p.sick_days }} sakit</dd></div>
+                <div><dt>Potongan manual</dt><dd>{{ p.manual_deduction|rupiah }}</dd></div>
+                {% if p.automatic_deduction %}<div><dt>Potongan absensi</dt><dd>{{ p.automatic_deduction|rupiah }}</dd></div>{% endif %}
+              </dl>
+              <div class="pr-detail-actions">
+                <a class="pr-link" href="{% url 'payroll_edit' p.pk %}">Edit</a>
+                <a class="pr-link" href="{% url 'payroll_pdf' p.pk %}">Unduh PDF</a>
+                <form method="get" action="{% url 'payroll_pdf' p.pk %}" data-slip-png>
+                  <input type="hidden" name="format" value="png">
+                  <button type="submit" class="pr-link">Unduh PNG</button>
+                  <small class="slip-download-status" role="status"></small>
+                </form>
+                <a class="pr-link pr-danger" href="{% url 'payroll_delete' p.pk %}" aria-label="Hapus payroll" title="Hapus payroll">{% include 'core/icons/trash.html' %}</a>
+              </div>
+            </details>
+          </article>
+        {% endwith %}
+      {% empty %}
+        <div class="pr-empty pr-surface"><h3>Belum ada slip gaji</h3><p class="pr-meta">Ubah filter atau buat payroll untuk periode yang diperlukan.</p></div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="pr-history" id="riwayat-pembayaran" aria-labelledby="pr-history-title">
+    <h2 id="pr-history-title">Riwayat pembayaran</h2>
+    <div class="pr-history-list pr-surface">
+      {% for payment in paid_summary.rows %}
+        <article class="pr-history-row">
+          <div><h3>{{ payment.employee_name }}</h3><p class="pr-meta">{{ payment.paid_date|date:'d M Y' }} · {{ payment.period_label }}</p></div>
+          <strong class="pr-history-amount">{{ payment.amount|rupiah }}</strong>
+          <div class="pr-history-note">
+            {% if payment.notes %}<p class="pr-meta">{{ payment.notes }}</p>{% endif %}
+            {% if payment.voided %}<span class="pr-status pr-status-void">Dibatalkan</span><p class="pr-meta">{{ payment.void_reason }}</p>
+            {% else %}<a class="pr-link pr-danger" href="{% url 'payroll_payment_cancel' payment.pk %}">Koreksi pembayaran</a>{% endif %}
+          </div>
+        </article>
+      {% empty %}<p class="pr-empty pr-meta">Belum ada pembayaran tercatat pada bulan yang dipilih.</p>{% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'core/slip-download.js' %}" defer></script>{% endblock %}
