@@ -247,7 +247,7 @@
   background:#f0f5ff;
 }
 .att-checkin-evidence p { color:#526079; font-size:11px; }
-.att-checkin-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.att-checkin-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
 .att-checkin-actions p { grid-column: 1 / -1; }
 .att-button--danger { background:#fff5f4; color:#912a26; border-color:#ecc4c2; }
 .att-button--danger:hover { border-color:#c36761; }
@@ -266,3 +266,5 @@
   .att-calendar-footer { flex-wrap: wrap; }
   .att-calendar-footer .att-button { width: 100%; }
 }
+
+.att-button--icon { min-width: 45px; padding-inline: 0; }

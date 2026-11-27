@@ -3,7 +3,7 @@
 {% block title %}Absensi{% endblock %}
 {% block breadcrumb %}Absensi{% endblock %}
 {% block body_class %}erp-attendance{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'core/attendance.css' %}?v=5">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'core/attendance.css' %}?v=6">{% endblock %}
 {% block content %}
 <div class="att-page">
   <header class="att-heading">
@@ -126,7 +126,7 @@
           <div class="att-checkin-actions">
             <p>Perangkat absen · {{ log.device_label|default:"Tidak tercatat" }}</p>
             <a class="att-button att-button--quiet" href="https://www.google.com/maps/search/?api=1&amp;query={{ log.latitude|unlocalize }},{{ log.longitude|unlocalize }}" target="_blank" rel="noopener noreferrer">Buka lokasi</a>
-            <a class="att-button att-button--danger" href="{% url 'attendance_delete_check_in' log.pk %}">Hapus absen mandiri</a>
+            <a class="att-button att-button--danger att-button--icon" href="{% url 'attendance_delete_check_in' log.pk %}" aria-label="Hapus absen mandiri" title="Hapus absen mandiri"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"/></svg></a>
           </div>
         </aside>
         {% endwith %}
