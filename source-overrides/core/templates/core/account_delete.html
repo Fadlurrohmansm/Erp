@@ -1,0 +1,15 @@
+{% extends 'core/base.html' %}
+{% block title %}Hapus akun{% endblock %}
+{% block content %}
+<section class="panel form-panel">
+  <h1>Hapus akun {{ account.username }}?</h1>
+  <p>Akun ini akan kehilangan akses login. Jika akun masih terkait riwayat ERP, akun akan dinonaktifkan agar riwayat tetap tersimpan.</p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-actions">
+      <button class="btn danger" type="submit">Hapus akun</button>
+      <a class="btn secondary" href="{{ back_url }}">Batal</a>
+    </div>
+  </form>
+</section>
+{% endblock %}
