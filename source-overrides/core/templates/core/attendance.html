@@ -1,0 +1,176 @@
+{% extends "core/base.html" %}
+{% load static l10n %}
+{% block title %}Absensi{% endblock %}
+{% block breadcrumb %}Absensi{% endblock %}
+{% block body_class %}erp-attendance{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'core/attendance.css' %}?v=5">{% endblock %}
+{% block content %}
+<div class="att-page">
+  <header class="att-heading">
+    <div>
+      <p>{{ selected_branch.name }}</p>
+      <h1>Absensi karyawan</h1>
+      {% if attendance_cutoff %}<p>Batas hadir {{ selected_date|date:'d/m' }} <strong>{{ attendance_cutoff|time:'H:i' }} WIB</strong></p>{% endif %}
+    </div>
+    <div class="att-heading-actions">
+      {% if request.user.is_superuser %}
+        <a class="att-button att-button--quiet" href="{% url 'attendance_cutoff' %}">Batas hadir</a>
+        <a class="att-button att-button--quiet" href="{% url 'attendance_notifications' %}">Notifikasi absensi</a>
+      {% endif %}
+      <a class="att-button att-button--quiet" href="{% url 'employee_list' %}"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg>Karyawan</a>
+    </div>
+  </header>
+
+  {% if employees %}
+  <section class="attendance-filters att-card" aria-label="Filter absensi">
+    <form method="get" class="att-filter-form">
+      <label for="att-employee">Karyawan
+        <select name="employee" id="att-employee">
+          {% for e in employees %}<option value="{{ e.pk }}"{% if e.pk == employee.pk %} selected{% endif %}>{{ e.full_name }}</option>{% endfor %}
+        </select>
+      </label>
+      <label for="att-month">Bulan absensi
+        <input type="month" name="month" id="att-month" value="{{ year }}-{{ month|stringformat:'02d' }}">
+      </label>
+      <button class="att-button att-button--quiet" type="submit">Terapkan filter</button>
+    </form>
+  </section>
+  {% endif %}
+
+  {% if employee %}
+  <div class="calendar-layout att-layout">
+    <section class="att-card att-calendar" aria-labelledby="att-period-title">
+      <div class="att-card-head">
+        <div>
+          <h2 id="att-period-title">{{ month_name }} {{ year }}</h2>
+          <p>{{ employee.full_name }}{% if employee.position %} · {{ employee.position }}{% endif %}</p>
+        </div>
+        <nav class="att-month-nav" aria-label="Navigasi bulan">
+          <a href="?month={{ previous_month }}&amp;employee={{ employee.pk }}" data-attendance-month aria-label="Bulan sebelumnya"><svg class="icon att-arrow-back" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          <a href="?month={{ next_month }}&amp;employee={{ employee.pk }}" data-attendance-month aria-label="Bulan berikutnya"><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        </nav>
+      </div>
+
+      <table class="calendar">
+        <caption class="att-sr-only">Kalender kehadiran {{ employee.full_name }}, {{ month_name }} {{ year }}</caption>
+        <thead><tr>
+          <th scope="col">Sen</th><th scope="col">Sel</th><th scope="col">Rab</th><th scope="col">Kam</th><th scope="col">Jum</th><th scope="col">Sab</th><th scope="col">Min</th>
+        </tr></thead>
+        <tbody>
+          {% for week in calendar_weeks %}
+          <tr>
+            {% for cell in week %}
+            <td{% if cell.selected %} class="selected"{% endif %}>
+              {% if cell.day %}
+              <label class="attendance-date-check">
+                <input type="checkbox" name="dates" value="{{ year }}-{{ month|stringformat:'02d' }}-{{ cell.day|stringformat:'02d' }}" form="attendance-entry" aria-label="Pilih tanggal {{ cell.day }} {{ month_name }} {{ year }}" data-attendance-check>
+              </label>
+              <a data-attendance-date href="?month={{ year }}-{{ month|stringformat:'02d' }}&amp;employee={{ employee.pk }}&amp;day={{ cell.day }}"{% if cell.selected %} aria-current="date"{% endif %} aria-label="{{ cell.day }} {{ month_name }} {{ year }}{% if cell.record %}, {{ cell.record.get_status_display }}, {{ cell.record.work_branch_name }}{% else %}, belum dicatat{% endif %}">
+                <span class="att-day-number">{{ cell.day }}</span>
+                {% if cell.record %}
+                  {% with status=cell.record.status %}
+                  <span class="att-status att-status--{{ status }}">
+                    {% if status == 'present' %}Masuk{% elif status == 'late' %}Telat{% elif status == 'absent' %}Absen{% elif status == 'off' %}Libur{% elif status == 'leave' %}Izin{% elif status == 'sick' %}Sakit{% else %}{{ cell.record.get_status_display }}{% endif %}
+                  </span>
+                  {% endwith %}
+                  <small class="att-date-detail">{{ cell.record.work_branch_name }}</small>
+                  {% if cell.record.status == 'present' %}<small class="att-date-detail">{% if cell.record.punctual %}Tepat waktu{% else %}Tanpa bonus{% endif %}</small>{% endif %}
+                {% endif %}
+              </a>
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="att-bulk">
+        <label for="att-all"><input type="checkbox" id="att-all" data-attendance-all><span>Pilih sebulan</span></label>
+        <output data-attendance-count aria-live="polite">0 tanggal dipilih</output>
+        <button type="button" class="att-button att-button--quiet" data-attendance-clear>Reset pilihan</button>
+      </div>
+      <div class="att-calendar-footer">
+        <p>Ketuk tanggal untuk membuka catatan. Centang kotaknya untuk memilih beberapa hari.</p>
+        <a class="att-button att-button--lime" href="#attendance-editor">Isi kehadiran <svg class="icon att-arrow-down" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+      </div>
+
+      <dl class="att-quota">
+        <div><dt>{% if shared_quota %}Libur, izin &amp; sakit{% else %}Libur terpakai{% endif %}</dt><dd>{{ off_days }} / {{ employee.monthly_leave_quota }}</dd></div>
+        <div><dt>Sisa jatah</dt><dd>{{ remaining_leave }} hari</dd></div>
+        <div><dt>Kelebihan</dt><dd>{{ excess_leave }} hari</dd></div>
+      </dl>
+      <details class="att-help">
+        <summary>Panduan absensi</summary>
+        <p>Tanggal kosong berarti absensi belum dicatat. Di komputer, klik dan seret pada kalender untuk memilih rentang tanggal. Setelah mengubah catatan yang sudah masuk payroll, gunakan <strong>Hitung ulang absensi</strong> pada payroll.</p>
+      </details>
+    </section>
+
+    <section class="att-card att-editor attendance-editor" id="attendance-editor" aria-labelledby="att-editor-title">
+      <div class="att-card-head">
+        <div>
+          <h2 id="att-editor-title">Catatan kehadiran</h2>
+          <p>{{ selected_date.day }} {{ month_name }} {{ year }} · {{ employee.full_name }}</p>
+        </div>
+        <span class="att-record-flag{% if selected_record %} att-record-flag--saved{% endif %}">{% if selected_record %}{{ selected_record.get_status_display }}{% else %}Belum dicatat{% endif %}</span>
+      </div>
+
+      {% if request.user.is_superuser and selected_record.portal_check_in %}
+        {% with log=selected_record.portal_check_in %}
+        <aside class="att-checkin-evidence" aria-label="Data dari portal karyawan">
+          <div>
+            <strong>Absen mandiri</strong>
+            <p>{{ log.recorded_at|date:'H:i:s' }} WIB · Akurasi perangkat ±{{ log.accuracy|floatformat:0 }} m</p>
+            {% if log.punctuality_cutoff %}<p>Batas saat absen: {{ log.punctuality_cutoff|time:'H:i' }} WIB · {% if selected_record.punctual %}Memenuhi bonus{% else %}Tanpa bonus tepat waktu{% endif %}</p>{% else %}<p>Batas hadir belum diatur saat absen.</p>{% endif %}
+          </div>
+          <div class="att-checkin-actions">
+            <p>Perangkat absen · {{ log.device_label|default:"Tidak tercatat" }}</p>
+            <a class="att-button att-button--quiet" href="https://www.google.com/maps/search/?api=1&amp;query={{ log.latitude|unlocalize }},{{ log.longitude|unlocalize }}" target="_blank" rel="noopener noreferrer">Buka lokasi</a>
+            <a class="att-button att-button--danger" href="{% url 'attendance_delete_check_in' log.pk %}">Hapus absen mandiri</a>
+          </div>
+        </aside>
+        {% endwith %}
+      {% endif %}
+
+      <form method="post" id="attendance-entry" class="att-entry">
+        {% csrf_token %}
+        {% if selected_branch %}<input type="hidden" name="_branch_id" value="{{ selected_branch.pk }}">{% endif %}
+        <input type="hidden" name="employee" value="{{ employee.pk }}">
+        <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+
+        <label for="att-status">Status kehadiran
+          <select name="status" id="att-status">
+            {% for value,label in status_choices %}<option value="{{ value }}"{% if selected_record.status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select>
+        </label>
+
+        <label for="att-branch">Cabang bertugas
+          <select name="work_branch" id="att-branch">
+            {% for b in branches %}<option value="{{ b.pk }}"{% if selected_record.work_branch_id == b.pk or not selected_record.work_branch_id and selected_branch.pk == b.pk %} selected{% endif %}>{{ b.name }}</option>{% endfor %}
+          </select>
+        </label>
+
+        <label for="att-punctual">Bonus tepat waktu
+          <select name="punctual" id="att-punctual" aria-describedby="att-punctual-help"><option value="no">Tidak</option><option value="yes"{% if selected_record.punctual %} selected{% endif %}>Ya</option></select>
+          <small id="att-punctual-help">Berlaku untuk status Masuk. Jika jam masuk melewati batas cabang bertugas, bonus tidak dihitung.</small>
+        </label>
+
+        <div class="att-times">
+          <label for="att-in">Jam masuk<input type="time" id="att-in" name="check_in" step="1" value="{{ selected_record.check_in|time:'H:i:s' }}"></label>
+          <label for="att-out">Jam pulang<input type="time" id="att-out" name="check_out" step="1" value="{{ selected_record.check_out|time:'H:i:s' }}"></label>
+        </div>
+        <label for="att-notes">Catatan <span>(opsional)</span><textarea id="att-notes" name="notes" maxlength="255" rows="2">{{ selected_record.notes|default:'' }}</textarea></label>
+        <p class="att-form-help">Jika beberapa tanggal dicentang, isian ini akan mengganti catatan di semua tanggal pilihan.</p>
+        <button class="att-button att-button--lime" type="submit" data-attendance-save>Simpan kehadiran</button>
+      </form>
+    </section>
+  </div>
+  {% else %}
+  <section class="att-card att-empty">
+    <h2>Belum ada karyawan aktif yang dipilih</h2>
+    <p>Pilih karyawan aktif atau tambahkan karyawan baru untuk mulai mencatat absensi.</p>
+    <a class="att-button att-button--lime" href="{% url 'employee_create' %}">Tambah karyawan</a>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
