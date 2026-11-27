@@ -1,0 +1,22 @@
+{% load static %}
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="{% block theme_color %}#f3f6fc{% endblock %}">
+  <meta name="apple-mobile-web-app-title" content="ERP UMKM">
+  <link rel="manifest" href="{% url 'employee_portal:manifest' %}">
+  <link rel="apple-touch-icon" href="{% static 'core/icons/erp-umkm-192.png' %}">
+  <title>{% block title %}Portal Absensi{% endblock %} · {{ business.name|default:'Seblak Sayank' }}</title>
+  <link rel="stylesheet" href="{% static 'core/employee-portal.css' %}?v=4">
+  {% block extra_head %}{% endblock %}
+  <script src="{% static 'core/employee-portal.js' %}?v=3" defer data-employee-worker="{% url 'employee_portal:service_worker' %}"></script>
+</head>
+<body class="{% block body_class %}{% endblock %}">
+<main class="{% block shell_class %}staff-shell{% endblock %}">
+  {% if messages %}<ul class="staff-notices" aria-live="polite">{% for item in messages %}<li class="{{ item.tags }}">{{ item }}</li>{% endfor %}</ul>{% endif %}
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "id": "/",
+  "name": "ERP UMKM",
+  "short_name": "ERP UMKM",
+  "description": "Kelola operasional, penjualan, HPP, karyawan, dan payroll Seblak Sayank.",
+  "lang": "id-ID",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {"src": "/static/core/icons/erp-umkm-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "/static/core/icons/erp-umkm-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "/static/core/icons/erp-umkm-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}

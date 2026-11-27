@@ -1,0 +1,75 @@
+{% load static erp %}<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="color-scheme" content="light"><meta name="theme-color" content="#ffffff"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ERP UMKM"><link rel="manifest" href="{% url 'web_manifest' %}"><link rel="apple-touch-icon" href="{% static 'core/icons/erp-umkm-192.png' %}"><title>{% block title %}Dashboard{% endblock %} · {{ business.name|default:'Usaha F&B' }}</title><link rel="stylesheet" href="{% static 'core/erp.css' %}?v=2.57"><script src="{% static 'core/erp.js' %}?v=2.55" defer></script>{% block extra_head %}{% endblock %}</head>
+<body class="{% block body_class %}{% endblock %}">
+<a class="skip-link" href="#main-content">Langsung ke konten</a>
+<svg xmlns="http://www.w3.org/2000/svg" class="svg-defs" aria-hidden="true"><defs>
+<symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></symbol>
+<symbol id="i-bag" viewBox="0 0 24 24"><path d="M5 7h14l1 14H4L5 7Z"/><path d="M9 8V5a3 3 0 0 1 6 0v3"/></symbol>
+<symbol id="i-box" viewBox="0 0 24 24"><path d="m12 3 9 5v9l-9 5-9-5V8l9-5Z"/><path d="m3 8 9 5 9-5M12 13v9M7 5.8l9 5"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M2 21v-3a7 7 0 0 1 14 0v3M16 3a4 4 0 0 1 0 8M18 14a6 6 0 0 1 4 7"/></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 2v6M17 2v6M3 11h18m-12 4 2 2 4-4"/></symbol>
+<symbol id="i-wallet" viewBox="0 0 24 24"><path d="M21 8V5H5a3 3 0 0 0 0 6h16v10H5a3 3 0 0 1-3-3V8"/><path d="M21 12h-6v6h6"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18M7 16v-4m5 4V8m5 8V5"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+<symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="m9 3 1-2h4l1 2 3 2 3 1v4l-2 2 2 3v4l-3 1-3 2h-5l-1-2-4-1-2-3v-4l2-2V6l4-3Z"/></symbol>
+<symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 21 3.5 12A5.5 5.5 0 0 1 12 5a5.5 5.5 0 0 1 8.5 7L12 21Z"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></symbol>
+<symbol id="i-logout" viewBox="0 0 24 24"><path d="M11 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h6m3-12 4 4-4 4m-5-4h9"/></symbol>
+</defs></svg>
+<div class="mobile-shade" id="nav-shade"></div>
+<aside class="sidebar" id="sidebar">
+<a class="brand" href="{% url 'dashboard' %}"><span class="brand-icon"><svg class="icon"><use href="#i-heart"/></svg></span><span>{{ business.name|default:'Usaha F&B' }}<small>RUANG KELOLA USAHA</small></span></a>
+<div class="branch-picker">{% if branches %}<form method="post" action="{% url 'branch_switch' %}">{% csrf_token %}{% if selected_branch %}<input type="hidden" name="_branch_id" value="{{ selected_branch.pk }}">{% endif %}<label for="branch-select">Cabang aktif</label><select name="branch_id" id="branch-select" onchange="this.form.submit()">{% for branch in branches %}<option value="{{ branch.pk }}" {% if selected_branch.pk == branch.pk %}selected{% endif %}>{{ branch.name }}</option>{% endfor %}</select><noscript><button class="btn small">Pilih</button></noscript></form>{% endif %}<a href="{% url 'branch_create' %}" class="branch-add">+ Tambah cabang</a></div><a class="branch-add" href="{% url 'branch_list' %}">Kelola cabang</a><div class="workspace-label"><span class="live-dot"></span> Operasional usaha <span class="version">v2.31</span></div>
+<p class="nav-caption">OPERASIONAL</p><nav aria-label="Navigasi utama">
+<a href="{% url 'dashboard' %}" data-nav="dashboard"><svg class="icon"><use href="#i-grid"/></svg>Ringkasan</a>
+<a href="{% url 'sale_list' %}" data-nav="sale"><svg class="icon"><use href="#i-bag"/></svg>Penjualan</a>
+<a href="{% url 'product_list' %}" data-nav="product"><svg class="icon"><use href="#i-menu"/></svg>Menu & resep</a>
+<details class="hpp-sidebar" {% if request.resolver_match.url_name|slice:':4' == 'hpp_' %}open{% endif %}>
+<summary>Manajemen HPP</summary>
+<a href="{% url 'hpp_dashboard' %}" data-nav="hpp_dashboard">Dashboard HPP</a>
+<a href="{% url 'inventory' %}">Bahan Baku</a>
+<a href="{% url 'hpp_purchases' %}" data-nav="hpp_purchases">Pembelian Bahan</a>
+<a href="{% url 'product_list' %}">Resep Menu</a>
+<a href="{% url 'hpp_calculator' %}" data-nav="hpp_calculator hpp_channel_rule">Kalkulator HPP</a>
+<a href="{% url 'hpp_prices' %}" data-nav="hpp_prices">Analisis Harga</a>
+<a href="{% url 'hpp_history' %}" data-nav="hpp_history hpp_snapshot_detail">Riwayat HPP</a>
+</details>
+<a href="{% url 'inventory' %}" data-nav="inventory ingredient stock purchase"><svg class="icon"><use href="#i-box"/></svg>Persediaan</a>
+<a href="{% url 'expense_list' %}" data-nav="expense"><svg class="icon"><use href="#i-wallet"/></svg>Pengeluaran</a>
+<p class="nav-caption">TIM & KEUANGAN</p>
+<a href="{% url 'role_list' %}" data-nav="roles"><svg class="icon"><use href="#i-users"/></svg>Jabatan & gaji</a>
+<a href="{% url 'employee_list' %}" data-nav="employee"><svg class="icon"><use href="#i-users"/></svg>Karyawan</a>
+<a href="{% url 'attendance_list' %}" data-nav="attendance"><svg class="icon"><use href="#i-calendar"/></svg>Absensi</a>
+<a href="{% url 'payroll_list' %}" data-nav="payroll"><svg class="icon"><use href="#i-wallet"/></svg>Payroll</a>
+<a href="{% url 'reports' %}" data-nav="reports"><svg class="icon"><use href="#i-chart"/></svg>Laporan keuangan</a>
+</nav>
+<a class="settings-link" href="{% url 'account_settings' %}" data-nav="account">Akun & password</a><div class="sidebar-bottom"><div class="sidebar-note"><span>Diracik dengan cinta.</span><small>{{ business.tagline|default:'Terima kasih atas kunjungan Anda.' }}</small><svg class="icon"><use href="#i-heart"/></svg></div><a class="settings-link" href="{% url 'business_settings' %}" data-nav="business_settings"><svg class="icon"><use href="#i-settings"/></svg> Pengaturan usaha</a>
+<form class="sidebar-logout" action="{% url 'logout' %}" method="post">
+  {% csrf_token %}
+  {% if selected_branch %}<input type="hidden" name="_branch_id" value="{{ selected_branch.pk }}">{% endif %}
+  <button class="settings-link" type="submit"><svg class="icon" aria-hidden="true"><use href="#i-logout"/></svg> Keluar</button>
+</form>
+</div>
+</aside>
+<div class="app" data-section="{{ section }}">
+<main id="main-content" class="main-content">
+{% if messages %}<div class="messages" aria-live="polite">{% for message in messages %}<div class="toast {{ message.tags }}">{{ message }}</div>{% endfor %}</div>{% endif %}
+{% block content %}{% endblock %}
+<footer class="footer"><span>{{ business.name|default:'Usaha F&B' }} <span>·</span> Ruang kelola usahamu.</span><span>Semua angka dalam Rupiah</span></footer>
+</main>
+{% if section != "dashboard" %}
+<nav class="mobile-dock" aria-label="Navigasi cepat">
+  <a href="{% url 'dashboard' %}"><svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg><span>Ringkasan</span></a>
+  <a href="{% url 'sale_list' %}" data-nav="sale pos_import"><svg class="icon" aria-hidden="true"><use href="#i-bag"/></svg><span>Penjualan</span></a>
+  <a href="{% url 'attendance_list' %}" data-nav="attendance"><svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg><span>Absensi</span></a>
+  <a href="{% url 'payroll_list' %}" data-nav="payroll"><svg class="icon" aria-hidden="true"><use href="#i-wallet"/></svg><span>Payroll</span></a>
+  <button id="nav-toggle" type="button" aria-controls="sidebar" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg><span>Menu</span></button>
+</nav>
+{% endif %}
+</div>
+
+{% block scripts %}{% endblock %}
+<script>
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('{% url "service_worker" %}', {scope: '/'}).catch(() => {});
+</script>
+<dialog id="action-confirm-dialog" aria-labelledby="action-confirm-title"><div class="action-dialog-head"><h2 id="action-confirm-title">Konfirmasi</h2><button type="button" class="btn small secondary" data-close-action-dialog aria-label="Tutup konfirmasi">Tutup</button></div><div id="action-confirm-content"></div></dialog></body></html>

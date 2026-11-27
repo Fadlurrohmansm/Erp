@@ -1,0 +1,37 @@
+{% load static %}
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f3f5f1">
+  <meta name="apple-mobile-web-app-title" content="ERP UMKM">
+  <link rel="manifest" href="{% url 'web_manifest' %}">
+  <link rel="apple-touch-icon" href="{% static 'core/icons/erp-umkm-192.png' %}">
+  <link rel="stylesheet" href="{% static 'core/login.css' %}?v=1">
+  <title>Masuk owner · {{ business.name|default:'Seblak Sayank' }}</title>
+</head>
+<body class="entry-page">
+  <main class="entry-shell">
+    {% include 'core/portal/login_panel.html' %}
+  </main>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('{% url "service_worker" %}').catch(() => {});
+    const installButton = document.getElementById('install-app-button');
+    let installPrompt;
+    window.addEventListener('beforeinstallprompt', event => {
+      event.preventDefault();
+      installPrompt = event;
+      installButton.hidden = false;
+    });
+    installButton.addEventListener('click', async () => {
+      if (!installPrompt) return;
+      const prompt = installPrompt;
+      installPrompt = null;
+      installButton.hidden = true;
+      await prompt.prompt();
+    });
+    window.addEventListener('appinstalled', () => { installButton.hidden = true; });
+  </script>
+</body>
+</html>
