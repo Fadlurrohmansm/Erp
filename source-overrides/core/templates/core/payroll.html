@@ -98,14 +98,11 @@
                 <div><dt>Potongan manual</dt><dd>{{ p.manual_deduction|rupiah }}</dd></div>
                 {% if p.automatic_deduction %}<div><dt>Potongan absensi</dt><dd>{{ p.automatic_deduction|rupiah }}</dd></div>{% endif %}
               </dl>
-              <div class="pr-detail-actions">
+              <div class="pr-detail-actions" data-slip-download="{% url 'payroll_pdf' p.pk %}">
                 <a class="pr-link" href="{% url 'payroll_edit' p.pk %}">Edit</a>
-                <a class="pr-link" href="{% url 'payroll_pdf' p.pk %}">Unduh PDF</a>
-                <form method="get" action="{% url 'payroll_pdf' p.pk %}" data-slip-png>
-                  <input type="hidden" name="format" value="png">
-                  <button type="submit" class="pr-link">Unduh PNG</button>
-                  <small class="slip-download-status" role="status"></small>
-                </form>
+                <button type="button" class="pr-link" data-slip-format="pdf" disabled>Unduh PDF</button>
+      <button type="button" class="pr-link" data-slip-format="png" disabled>Unduh PNG</button>
+      <small class="slip-download-status" style="grid-column: 1 / -1" role="status"></small>
                 <a class="pr-link pr-danger" href="{% url 'payroll_delete' p.pk %}" aria-label="Hapus payroll" title="Hapus payroll">{% include 'core/icons/trash.html' %}</a>
               </div>
             </details>
@@ -136,4 +133,4 @@
 </div>
 {% endblock %}
 
-{% block scripts %}<script src="{% static 'core/slip-download.js' %}" defer></script>{% endblock %}
+{% block scripts %}<script src="{% static 'core/slip-download.js' %}?v=2" defer></script>{% endblock %}

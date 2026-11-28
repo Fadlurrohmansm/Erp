@@ -1,0 +1,95 @@
+{% extends 'core/base.html' %}
+{% load erp static %}
+{% block title %}Preview slip gaji{% endblock %}
+{% block breadcrumb %}Preview slip gaji{% endblock %}
+{% block content %}
+<div class="workflow payroll-workflow">
+  <header class="workflow-header no-print">
+    <a class="workflow-back" href="{% url 'payroll_list' %}">← Payroll</a>
+    <h1>Preview slip gaji</h1>
+    <p>Rekap tersimpan untuk {{ payroll.employee.full_name }}.</p>
+  </header>
+
+  <section class="payroll-slip workflow-card" aria-labelledby="slip-title">
+    <header class="slip-cover">
+      <div>
+        <p>{{ business.name|default:'Usaha F&B' }}</p>
+        <h1 id="slip-title">{{ layout.title }}</h1>
+        <span>{{ payroll.period_label }}</span>
+      </div>
+      <div class="slip-cover-total"><span>Gaji bersih</span><strong>{{ payroll.net_salary|rupiah }}</strong></div>
+    </header>
+    <div class="slip-content">
+      {% if layout.show_work_branches %}
+        {% with rows=payroll.branch_work_rows %}
+          {% if rows %}
+            <p class="workflow-hint"><strong>Cabang kerja:</strong>
+              {% if rows|length == 1 %}{{ rows.0.name }}{% else %}
+                {% for row in rows %}{{ row.name }}: {{ row.days }} hari{% if not forloop.last %} · {% endif %}{% endfor %}
+              {% endif %}
+            </p>
+          {% endif %}
+        {% endwith %}
+      {% endif %}
+      <div class="slip-identity">
+        <div><small>Nama karyawan</small><strong>{{ payroll.employee.full_name }}</strong>{% if layout.show_employee_code %}<span>{{ payroll.employee.employee_code }}</span>{% endif %}</div>
+        {% if layout.show_position %}<div><small>Jabatan</small><strong>{{ payroll.role_name|default:payroll.employee.position }}</strong><span>{% if payroll.pay_scheme == 'daily' %}Gaji harian{% else %}Gaji bulanan{% endif %}</span></div>{% endif %}
+      </div>
+
+      {% if layout.show_base_salary or layout.show_fuel or layout.show_punctual_bonus or layout.show_extras or layout.show_deduction %}
+      <h2 class="slip-section">Rincian gaji</h2>
+      <dl class="slip-amounts">
+        {% if layout.show_base_salary %}
+          <div><dt>{% if payroll.pay_scheme == 'daily' %}Gaji harian{% if layout.show_rate_details %}<small>{{ payroll.present_days|add:payroll.late_days }} hari × {{ payroll.daily_rate|rupiah }}</small>{% endif %}{% else %}Gaji pokok periode{% endif %}</dt><dd>{{ payroll.payable_base_salary|rupiah }}</dd></div>
+        {% endif %}
+        {% if layout.show_fuel %}<div><dt>Uang bensin</dt><dd>{{ payroll.fuel_allowance|rupiah }}</dd></div>{% endif %}
+        {% if layout.show_punctual_bonus %}
+          <div><dt>Bonus tepat waktu{% if layout.show_rate_details %}<small>{{ payroll.punctual_days }} hari × {{ payroll.punctual_bonus_per_day|rupiah }}</small>{% endif %}</dt><dd>{{ payroll.punctual_bonus|rupiah }}</dd></div>
+        {% endif %}
+        {% if layout.show_extras %}
+          {% for extra in payroll.extras.all %}<div><dt>Bonus atau tunjangan<small>{{ extra.description }}</small></dt><dd>{{ extra.amount|rupiah }}</dd></div>{% endfor %}
+        {% endif %}
+        {% if layout.show_deduction %}
+          <div><dt>{{ payroll.deduction_label }}</dt><dd class="slip-deduction">− {{ payroll.manual_deduction|rupiah }}</dd></div>
+          {% for row in payroll.deduction_groups %}<div><dt>Potongan {{ row.label|lower }}{% if layout.show_rate_details %}<small>{{ row.days }} hari</small>{% endif %}</dt><dd class="slip-deduction">− {{ row.amount|rupiah }}</dd></div>{% endfor %}
+        {% endif %}
+      </dl>
+      {% endif %}
+
+      {% if layout.show_attendance %}
+      <h2 class="slip-section">Rekap absensi tersimpan</h2>
+      <dl class="slip-metrics">
+        <div><dt>Masuk</dt><dd>{{ payroll.present_days }}</dd></div>
+        <div><dt>Terlambat</dt><dd>{{ payroll.late_days }}</dd></div>
+        <div><dt>Sakit</dt><dd>{{ payroll.sick_days }}</dd></div>
+        <div><dt>Izin</dt><dd>{{ payroll.leave_days }}</dd></div>
+        <div><dt>Libur</dt><dd>{{ payroll.off_days }}</dd></div>
+        <div><dt>Tidak hadir</dt><dd>{{ payroll.absent_days }}</dd></div>
+      </dl>
+      {% if not payroll.start_date %}<p class="workflow-hint">Jatah bulanan: {{ payroll.monthly_leave_quota }} hari · Melebihi jatah: {{ payroll.excess_off_days }} hari.</p>{% endif %}
+      {% endif %}
+      {% if layout.show_notes and payroll.notes %}<div class="workflow-inset"><strong>Catatan</strong><p>{{ payroll.notes }}</p></div>{% endif %}
+      {% if layout.show_footer and layout.footer %}<p class="slip-footer">{{ layout.footer }}</p>{% endif %}
+    </div>
+  </section>
+
+  <div class="workflow-download no-print">
+    <div class="workflow-actions workflow-actions--three" data-slip-download="{% url 'payroll_pdf' payroll.pk %}">
+      <a class="btn secondary" href="{% url 'payroll_edit' payroll.pk %}">Edit payroll</a>
+      <button type="button" class="btn" data-slip-format="pdf" disabled>Unduh PDF</button>
+      <button type="button" class="btn secondary" data-slip-format="png" disabled>Unduh PNG</button>
+      <small class="slip-download-status" style="grid-column: 1 / -1" role="status"></small>
+    </div>
+    <details class="workflow-details">
+      <summary>Opsi lainnya</summary>
+      <div class="workflow-actions">
+        <a class="btn secondary" href="{% url 'slip_layout_settings' %}">Atur layout slip</a>
+        <a class="btn secondary" href="{% url 'payroll_pdf' payroll.pk %}?inline=1" target="_blank" rel="noopener">Lihat PDF asli</a>
+        <button type="button" class="btn secondary" data-print>Cetak preview</button>
+      </div>
+    </details>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'core/slip-download.js' %}?v=2" defer></script>{% endblock %}
